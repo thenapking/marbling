@@ -4,6 +4,7 @@ class Group {
     this.y = y;
     this.r = r;
     this.position = createVector(x, y); 
+    this.average_position = createVector(x, y);
     this.idx = idx;
 
     this.agents = [];
@@ -16,7 +17,6 @@ class Group {
       let p = createVector(cos(angle), sin(angle));
       p.mult(this.r).add(this.position);
       let v = createVector(cos(angle), sin(angle))
-      v.mult(0.5)
       let agent = new Agent(p, v, this);
       this.agents[i] = agent;
     }
@@ -35,18 +35,25 @@ class Group {
   }
 
   update(){
-    let average_position = 0;
+    let avg_dist = 0;
+    let avg_pos = createVector(0, 0);
 
     for(let agent of this.agents){
-      let previous_position = agent.pos2.copy();
       agent.update();
-      average_position += dist(previous_position.x, previous_position.y, agent.pos2.x, agent.pos2.y);
+      avg_dist += p5.Vector.dist(this.position, agent.position);
+      avg_pos.add(agent.position);
     }
-
-    let new_r = average_position /= this.agents.length;
-    return new_r;
+    this.average_position = avg_pos.div(this.agents.length);
+    this.r = avg_dist / this.agents.length;
 
   }
+
+  separate(){ 
+    for(let agent of this.agents){
+      agent.separate();
+    }
+  }
+
 
 
   draw() {
@@ -59,5 +66,12 @@ class Group {
       vertex(v.x, v.y);
     }
     endShape(CLOSE);
+
+    if(debug){
+      noFill();
+      strokeWeight(2);
+      stroke(255,0,0);
+      circle(this.average_position.x, this.average_position.y, this.r*2);
+    }
   }
 }

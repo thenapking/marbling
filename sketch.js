@@ -23,6 +23,8 @@ let palette_name = "marble";
 let palette = palettes[palette_name];
 let bg = palette[0];
 
+let debug = true;
+
 let drops = [];
 let t =0 ;
 let paused  = false;
@@ -51,18 +53,9 @@ function setup() {
 function draw() {
   background(bg);
 
-  if(t % 200 == 0){
-    current_colour++;
-    current_colour = current_colour % palette.length;
-    next_postions = create_regular_positions(8, 0);
-    t = 0;
-    NDROPS++;
-  }
+  
 
-  if(NDROPS < MAX_DROPS){
-    add_drops(next_postions, 10);
-    update_groups();
-  }
+  update_groups();
 
   push();
     translate(BW, BW);
@@ -71,10 +64,6 @@ function draw() {
   pop();
   
   granulateSimple(granularity)
-
-  if(NDROPS > MAX_DROPS){
-    noLoop();
-  }
 
   if(paused){
     noLoop();
@@ -106,8 +95,9 @@ function marble_drops(position, r, sf){
 
 function update_groups(){
   for(let drop of drops){
-    let new_r = drop.update();
-    marble_drops(drop.position, new_r*20, (MAX_DROPS-NDROPS)/MAX_DROPS);
+    drop.update();
+    // marble_drops(drop.position, 1);
+    drop.separate();
     drop.edges();
   }
 }
@@ -136,7 +126,7 @@ function add_drops(positions, interval){
   let position = positions.pop();
   let r = 50;
   let drop = new Group(position.x, position.y, r, current_colour);
-  marble_drops(drop.position, r);
+  // marble_drops(drop.position, r);
   drops.push(drop);
 }
 
@@ -168,6 +158,17 @@ function check_intersection(position, radius = BASE_SIZE){
   return overlaps;
 }
 
+function mousePressed(){
+  let x = mouseX - BW;
+  let y = mouseY - BW;
+  let r = 1;
+
+  if(x < r || x > W - r || y < r || y > H - r){ return }
+  let drop = new Group(x, y, r, current_colour);
+  
+  drops.push(drop);
+}
+
 
 function keyPressed() {
   if (key === 's') {
@@ -179,5 +180,9 @@ function keyPressed() {
     if(!paused){
       loop();
     }
+  }
+
+  if(key === 'd'){
+    debug = !debug;
   }
 }

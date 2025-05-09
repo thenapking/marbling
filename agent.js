@@ -9,12 +9,39 @@ class Agent {
     this.maxForce = 0.025;
     this.active = true;
     this.size = 0;
+    this.left = null;
+    this.right = null;
   }
   
-  applyForce(force, m = 1) {
-    force.mult(m);
-    this.acceleration.add(force);
+  apply_force(other_position, f, min_dist = W*2) {
+    if(f < 0.001) { return; }
+    let p = p5.Vector.sub(this.position, other_position);
+    let d = p5.Vector.dist(this.position, other_position);
+    let m = p.magSq()
+
+    if(m < 0.001) { return; }
+    if(d > min_dist) { return; }
+
+    let effect = sqrt(1 + (f ** 2) / m);
+
+
+    p.mult(effect).add(other_position);
+
+    this.position.set(p);
   }
+
+  separate(){
+    for(let drop of drops){
+      if(drop == this.group){ continue }
+
+      for(let agent of drop.agents){
+        let d = this.group.r/2;
+        this.apply_force(agent.position, 0.5, d);
+      }
+    }
+  }
+
+
 
   edge_force() {
     let left =   createVector(0, this.position.y);
@@ -26,21 +53,21 @@ class Agent {
     let bottom_force = 1/(H - this.position.y);
     let right_force = 1/(W - this.position.x);
 
-    let sf = map(NDROPS, 0, MAX_DROPS, 4, 2);
-    sf *= MW
+    let sf = 3
     constrain(left_force, 0, 1);
     constrain(top_force, 0, 1);
     constrain(bottom_force, 0, 1);
     constrain(right_force, 0, 1);
 
-    this.marble(left, left_force * sf)
-    this.marble(top, top_force * sf)
-    this.marble(bottom, bottom_force * sf);
-    this.marble(right, right_force * sf);
+    this.apply_force(left, left_force * sf);
+    this.apply_force(right, right_force * sf);
+    this.apply_force(top, top_force * sf);
+    this.apply_force(bottom, bottom_force * sf);
+    this.edges();
 
   }
 
-  edges(d = 0) {
+  edges(d = 1) {
     if (this.position.x < d) {
       this.position.x = d;
     } else if (this.position.x > W-d) {
@@ -57,7 +84,7 @@ class Agent {
   update() {
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxSpeed);
-    this.pos2.add(this.velocity);
+    this.position.add(this.velocity);
     this.acceleration.mult(0);
     this.velocity.mult(0.95); // important to get this right for the cube-y effect
     if (this.velocity.mag() < 0.001) {
@@ -67,20 +94,7 @@ class Agent {
   }
 
   marble(other_position, r) {
-    let p = this.position.copy();
-    p.sub(other_position);
-    let m = p.mag();
-
-    // in order to reduce the strength of the marblng
-    // as more paint is added
-    // we need to scale this radius here
-    let sf = map(NDROPS, 0, MAX_DROPS, 1, 0.8);
-    r = r*sf
-
-    let root = sqrt(1 + (r * r) / (m * m));
-    p.mult(root);
-    p.add(other_position);
-    this.position.set(p);
+    this.apply_force(other_position, r);
     this.edges();
   }
 }
