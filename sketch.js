@@ -23,7 +23,7 @@ let palette_name = "marble";
 let palette = palettes[palette_name];
 let bg = palette[0];
 
-let debug = true;
+let debug = false;
 
 let drops = [];
 let t =0 ;
@@ -87,18 +87,17 @@ function draw_drops(){
   }
 }
 
-function marble_drops(position, r, sf){
-  for(let drop of drops){
-    drop.marble(position, r, sf);
-  }
-}
 
 function update_groups(){
   for(let drop of drops){
-    drop.update();
-    // marble_drops(drop.position, 1);
-    drop.separate();
     drop.edges();
+    drop.update();
+    for(let other of drops){
+      if(drop == other){ continue }
+      drop.marble(other.position, other.average_velocity * 10);
+    }
+    // drop.separate();
+    // drop.edges();
   }
 }
 

@@ -5,7 +5,7 @@ class Agent {
     this.group = group;
     this.velocity = velocity || p5.Vector.random2D();
     this.acceleration = createVector(0, 0);
-    this.maxSpeed = 1;
+    this.maxSpeed = 10;
     this.maxForce = 0.025;
     this.active = true;
     this.size = 0;
@@ -14,7 +14,7 @@ class Agent {
   }
   
   apply_force(other_position, f, min_dist = W*2) {
-    if(f < 0.001) { return; }
+    if(f < 0.1) { return; }
     let p = p5.Vector.sub(this.position, other_position);
     let d = p5.Vector.dist(this.position, other_position);
     let m = p.magSq()
@@ -27,7 +27,7 @@ class Agent {
 
     p.mult(effect).add(other_position);
 
-    this.position.set(p);
+    this.position.set(p)
   }
 
   separate(){
@@ -53,7 +53,8 @@ class Agent {
     let bottom_force = 1/(H - this.position.y);
     let right_force = 1/(W - this.position.x);
 
-    let sf = 3
+    let sf = 100 * this.velocity.mag();
+
     constrain(left_force, 0, 1);
     constrain(top_force, 0, 1);
     constrain(bottom_force, 0, 1);
