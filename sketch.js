@@ -1,11 +1,13 @@
 let DPI = 96;
-let wi = 10;
-let hi = 14;
+let wi = 5;
+let hi = 7;
 let bwi = 1/3;
+let mwi = 1/3;
 
 const W = wi * DPI;
 const H = hi * DPI;
 const BW = bwi * DPI;
+const MW = mwi * DPI;
 
 let palettes = {
   "mindful171":  ['#FDFBF8', '#FFD662', '#E84998', '#0044AA', '#00177D', '#1E80C7'],
@@ -23,173 +25,70 @@ let bg = palette[0];
 
 let drops = [];
 let t =0 ;
+let paused  = false;
 let max_t = 500
 let spoke_time = 20;
 
-let current_colour = 0;
+let current_colour = 1;
 let DROP_INTERVAL = 40;
 
 let granularity = 5;
-let MAX_DROPS = 30;
+let MAX_DROPS = 12;
 let NDROPS = 0;
 
-let u = 0.5;
-const NPOS = 30/(2*u);
-const INCR_SIZE = 10*u;
-const BASE_SIZE = 50*u;
-const SHORT = 10/u;
-const LONG = 50/u;
+
+let next_postions = [];
 
 function setup() {
-  createCanvas(W, H);
+  createCanvas(W + 2*BW, H+2*BW);
   frameRate(30);
   pixelDensity(1);
-  create_positions(NPOS);
-  add_drops(positions, 0, 0);
 
   p5grain.setup();
-
+  next_postions = create_regular_positions(8, 0);
 }
 
 function draw() {
   background(bg);
 
-  
-
-  if(t % DROP_INTERVAL == 0){
-    NDROPS++;
+  if(t % 200 == 0){
+    current_colour++;
+    current_colour = current_colour % palette.length;
+    next_postions = create_regular_positions(8, 0);
     t = 0;
-    
-    
-    previous_colour = current_colour;
-
-    if(NDROPS % 3 == 0) {
-      DROP_INTERVAL = int(random(LONG, LONG*2));
-      add_drops_at_end();
-      add_drops_at_end();
-      add_drops_at_end();
-      create_positions(10)
-    } else {
-      DROP_INTERVAL= int(random(SHORT, SHORT*2));
-
-      recurse_positions();
-    }
-
-    current_colour = (previous_colour + 1) % palette.length;
-    if(current_colour == palette.length - 1){ current_colour = 1 }
-
-    add_drops(positions, NPOS, current_colour);
+    NDROPS++;
   }
 
-  add_more_drops(positions, 0, current_colour);
-
-  
-
-  if(NDROPS > MAX_DROPS){
-    noLoop();
-
-    for(let i = 0; i < 40; i++){
-      add_drops_at_end();
-    }
-
+  if(NDROPS < MAX_DROPS){
+    add_drops(next_postions, 10);
+    update_groups();
   }
 
   push();
-  translate(BW, BW);
-
-  draw_drops();
-  
+    translate(BW, BW);
+    draw_drops();
+    draw_borders();
   pop();
-
-  draw_borders();
   
   granulateSimple(granularity)
 
-  t++;  
-
   if(NDROPS > MAX_DROPS){
-    saveCanvas('marbling', 'png');
-    console.log("saved");
     noLoop();
   }
-}
 
-function add_drops_at_end(){
-  create_positions(NPOS);
-  current_colour = palette.length - random([1,2]);
-  add_drops(positions, random(2,15), current_colour);
+  if(paused){
+    noLoop();
+  } else {
+    t++;  
+  }
 }
 
 
 function draw_borders(){
-  fill(bg);
-  noStroke();
-  rect(0, 0, W, BW);
-  rect(0, 0, BW, H);
-  rect(0, H - BW, W, BW);
-  rect(W - BW, 0, BW, H);
-}
-
-let positions = [];
-
-function create_positions(n){
-  positions = [];
-  for (let i = 0; i < n; i++) {
-    let x = randomGaussian(W/2, W/3);
-    let y = randomGaussian(H/2, H/3);
-    let position = createVector(x, y);
-    let overlaps = false;
-    for(let other of positions){
-      if (position.dist(other) < BASE_SIZE){
-        overlaps = true;
-        break
-      }
-    }
-    if (!overlaps){
-      positions.push(position);
-    }
-  }
-}
-
-function recurse_positions(){
-  let new_positions = [];
-  let quot = 3 * BASE_SIZE / (NDROPS % 6)
-  for (let i = 0; i < positions.length; i++) {
-    for(let j = 0; j < 2; j++){ 
-      let x = randomGaussian(positions[i].x, quot);
-      let y = randomGaussian(positions[i].y, quot);
-      let position = createVector(x, y);
-      let overlaps = false;
-      for(let other of new_positions){
-        if (position.dist(other) < quot){
-          overlaps = true;
-          break
-        }
-      }
-      if (!overlaps){
-        new_positions.push(position);
-      }
-    }
-  }
-  positions = new_positions;
-}
-
-function add_more_drops(positions){
-  let tt = t%DROP_INTERVAL;
-  let tmap = map(tt, 0, DROP_INTERVAL, INCR_SIZE, 1);
-  
-
-  for(let position of positions){
-    marble_drops(position, tmap);
-  }
-}
-
-function add_drops(positions, r = 10, idx){
-  for(let position of positions){
-    let drop = new Drop(position.x, position.y, r, idx);
-    marble_drops(drop.position, drop.r)
-    drops.push(drop); 
-  }
+  noFill();
+  strokeWeight(2);
+  stroke(palette[1]);
+  rect(0, 0, W, H);
 }
 
 
@@ -199,14 +98,86 @@ function draw_drops(){
   }
 }
 
-function marble_drops(position, r){
+function marble_drops(position, r, sf){
   for(let drop of drops){
-    drop.marble(position, r);
+    drop.marble(position, r, sf);
   }
 }
+
+function update_groups(){
+  for(let drop of drops){
+    let new_r = drop.update();
+    marble_drops(drop.position, new_r*20, (MAX_DROPS-NDROPS)/MAX_DROPS);
+    drop.edges();
+  }
+}
+
+
+let positions = [];
+
+function create_random_positions(n){
+  let positions = [];
+  for (let i = 0; i < n; i++) {
+    let x = randomGaussian(W/2, W/3);
+    let y = randomGaussian(H/2, H/3);
+    let position = createVector(x, y);
+    let overlaps = check_intersection(position, BASE_SIZE);
+    if (!overlaps){
+      positions.push(position);
+    }
+  }
+  return positions;
+}
+
+function add_drops(positions, interval){
+  if(t%interval != 0){ return }
+  if(next_postions.length == 0){ return }
+
+  let position = positions.pop();
+  let r = 50;
+  let drop = new Group(position.x, position.y, r, current_colour);
+  marble_drops(drop.position, r);
+  drops.push(drop);
+}
+
+function create_regular_positions(n, rnd = 10){
+  let positions = [];
+  let nj = 7;
+  let ni = 3;
+  let yh = H-2*MW
+  let xw = W-2*MW
+  for(let i = 0; i < ni; i++){
+    for(let j = 1; j < nj; j++){
+      let x = i*xw/3 + xw/6
+      let y = j*yh/6
+      let position = createVector(x, y);
+      positions.push(position);
+    }
+  }
+  return positions;
+}
+
+function check_intersection(position, radius = BASE_SIZE){
+  let overlaps = false;
+  for(let other of positions){
+    if (position.dist(other) < radius){
+      overlaps = true;
+      break
+    }
+  }
+  return overlaps;
+}
+
 
 function keyPressed() {
   if (key === 's') {
     saveCanvas('marbling', 'png');
+  }
+
+  if(key === ' ') {
+    paused = !paused;
+    if(!paused){
+      loop();
+    }
   }
 }

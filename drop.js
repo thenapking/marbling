@@ -20,25 +20,6 @@ class Drop {
     }
   }
 
-  tine(m, x, y, z, c, idx = 0, offset) {
-    // x, y is the position of the tine
-    // m is the direction of the tine as a vector
-    let u = 1 / pow(2, 1 / c);
-    let b = createVector(x, y);
-    for (let i =0; i < RES; i++) {
-      let v = this.vertices[i];
-      if(i > idx*60 + offset && i < idx*60 + 30 + offset){
-        let pb = p5.Vector.sub(v, b);
-        let n = m.copy().rotate(HALF_PI);
-        let d = abs(pb.dot(n));
-        let mag = z * pow(u, d);
-        v.add(m.copy().mult(mag));
-      }
-    }
-  }
-
- 
-
   marble(position, r) {  
     for(let v of this.vertices){
       let p = v.copy();
