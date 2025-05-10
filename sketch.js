@@ -94,10 +94,8 @@ function update_groups(){
     drop.update();
     for(let other of drops){
       if(drop == other){ continue }
-      drop.marble(other.position, other.average_velocity * 10);
+      drop.marble(other.position, other.average_velocity * 7);
     }
-    // drop.separate();
-    // drop.edges();
   }
 }
 
@@ -172,6 +170,11 @@ function mousePressed(){
 function keyPressed() {
   if (key === 's') {
     saveCanvas('marbling', 'png');
+  }
+
+  if(key === 'c') {
+    current_colour++;
+    current_colour = current_colour % palette.length;
   }
 
   if(key === ' ') {

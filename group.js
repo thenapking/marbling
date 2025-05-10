@@ -1,4 +1,4 @@
-const RES = 100;
+const RES = 200;
 class Group {
   constructor(x, y, r, idx) {
     this.x = x;
@@ -22,6 +22,33 @@ class Group {
       v.mult(2)
       let agent = new Agent(p, v, this);
       this.agents[i] = agent;
+    }
+  }
+
+  // doesn't work if the group becomes convex
+  interpolate(){
+    let agents_to_add = []; 
+    for(let i = 0; i < this.agents.length + 1; i++){
+      let left = this.agents[i % this.agents.length];
+      let right = this.agents[(i + 1) % this.agents.length];
+      let dist = left.position.dist(right.position);
+      if(dist > 20){
+        let mid = p5.Vector.add(left.position, right.position).div(2);
+        agents_to_add[i]= new Agent(mid, left.velocity, this);
+      }
+    }
+
+    let agents_added = 0; 
+    for(let i = 0; i < agents_to_add.length; i++){
+      let agent = agents_to_add[i];
+      if(agent){
+        console.log("added agent");
+        agents_added++;
+        this.agents.splice(i, 0, agent);
+        if(agents_added > 10){
+          break
+        }
+      }
     }
   }
 
@@ -52,6 +79,8 @@ class Group {
     this.average_velocity = avg_vel / this.agents.length;
     this.r = avg_dist / this.agents.length;
 
+    // this.interpolate();
+    
   }
 
   separate(){ 
