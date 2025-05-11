@@ -86,11 +86,22 @@ function draw_drops(){
   }
 }
 
+// TODO implement toroidal edges
+// Try small tines which would make star/splats/spokes
+// Try shading
 
 function update_groups(){
   for(let drop of drops){
-    // drop.edges();
-    drop.update();
+    
+    let dispersion_velocity = drop.update();
+
+    if(dispersion_velocity.mag() > 0){
+      for(let other of drops){
+        if(drop !== other){
+          drop.marble(other.position, other.r);
+        }
+      }
+    }
   }
 }
 
@@ -112,7 +123,9 @@ function mousePressed(){
   let y = mouseY - BW;
   let r = 10;
 
+
   add_drop(x, y, r);
+
 }
 
 function add_drop(x, y, r){

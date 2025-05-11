@@ -36,50 +36,29 @@ class Group {
 
   edges(){
     let left = false;
+
     for(let agent of this.agents){
-      if(agent.position.x < 10){
+      if(agent.position.x < 30 && agent.position.x > 10){
         left = true;
         break;
       }
     }
     if(left){
       for(let agent of this.agents){
-        agent.marble(createVector(0, agent.position.y), 0.11);
+        agent.soft_edges(createVector(0, this.average_position.y), 5);
       }
     }
   }
-
-  separate(){
-    for(let other of drops){
-      if(other == this){ continue }
-      let dist = p5.Vector.dist(this.average_position, other.average_position);
-    
-      if(dist < this.r + other.r + 1){
-        let inside = false;
-        for(let agent of this.agents){
-          if(agent.intersects(other)){
-            inside = true;
-            break;
-          }
-        }
-
-        if(!inside){
-          for(let agent of this.agents){
-            agent.separate(other.position, 1);
-          }
-        }
-      }
-    }
-  }
-
 
   update(){
     let avg_dist = 0;
     let avg_pos = createVector(0, 0);
     let avg_vel = 0
-    this.separate();
+    let dispersion_velocity = createVector(0, 0);
+    // this.edges()
     for(let agent of this.agents){
-      agent.update();
+      
+      dispersion_velocity.add(agent.update());
       avg_vel += agent.velocity.mag();
       avg_pos.add(agent.position);
       avg_dist += p5.Vector.dist(this.average_position, agent.position);
@@ -93,6 +72,7 @@ class Group {
     
     this.r = new_r;
 
+    return dispersion_velocity;
     
   }
 
