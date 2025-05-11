@@ -93,15 +93,9 @@ function draw_drops(){
 function update_groups(){
   for(let drop of drops){
     
-    let dispersion_velocity = drop.update();
+    drop.update();
 
-    if(dispersion_velocity.mag() > 0){
-      for(let other of drops){
-        if(drop !== other){
-          drop.marble(other.position, other.r);
-        }
-      }
-    }
+    
   }
 }
 

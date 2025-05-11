@@ -55,7 +55,6 @@ class Group {
     let avg_pos = createVector(0, 0);
     let avg_vel = 0
     let dispersion_velocity = createVector(0, 0);
-    // this.edges()
     for(let agent of this.agents){
       
       dispersion_velocity.add(agent.update());

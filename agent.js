@@ -29,7 +29,7 @@ class Agent {
 
     let effect = sqrt( 1 + f ** 2 / m ** 2)
     p.mult(effect)
-    p.limit(5)
+    // p.limit(5)
     return p;
   }
 
@@ -52,24 +52,53 @@ class Agent {
     this.edge_velocity.add(p);
   }
 
+  intersects(position, drop){
+
+    let inside = false;
+    let n= drop.agents.length
+    for(let i = 0, j = n - 1; i < n; j = i++) {
+      let xi = drop.agents[i].position.x;
+      let yi = drop.agents[i].position.y;
+      let xj = drop.agents[j].position.x;
+      let yj = drop.agents[j].position.y;
+
+      if ((yi > position.y) !== (yj > position.y) && (position.x < (xj - xi) * (position.y - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+
+    return inside;
+
+  }
+
   update_by(v, reduction = 0.8){
+    let new_position = this.position.copy();
     v.limit(this.maxSpeed);
-    this.position.add(v);
+    new_position.add(v);
     v.mult(reduction);
+
+    let intersects_other_drop = false;
+    for(let other of drops){
+      if(other == this.group){ continue; }
+      if(this.intersects(new_position, other)){
+        intersects_other_drop = true;
+        break;
+      }
+    }
+
+    if(!intersects_other_drop){
+      this.position = new_position;
+    }
+    
     if(v.mag() < 0.001){
       v.mult(0);
     }
+    
   }
 
 
   update() {
-    this.hard_edges();
     this.update_by(this.dispersion_velocity, 0.9);
-    this.hard_edges();
-    this.update_by(this.marbling_velocity, 0.75);
-    this.hard_edges();
-    this.update_by(this.edge_velocity, 0.1);
-    this.hard_edges();
 
     return this.dispersion_velocity;
   }
@@ -79,8 +108,7 @@ class Agent {
   // and the average of the distance of each agent to the centroid 
   // (= the radius for a circle)
   marble(other_position, other_r) {
-    let p  = this.apply_force(other_position, other_r);
-    this.marbling_velocity.add(p.mult(0.05));
+    this.position = this.apply_force(other_position, other_r);
   }
 }
 
