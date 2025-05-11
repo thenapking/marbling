@@ -47,7 +47,6 @@ function setup() {
   pixelDensity(1);
 
   p5grain.setup();
-  next_postions = create_regular_positions(8, 0);
 }
 
 function draw() {
@@ -90,59 +89,12 @@ function draw_drops(){
 
 function update_groups(){
   for(let drop of drops){
-    drop.edges();
+    // drop.edges();
     drop.update();
-    for(let other of drops){
-      if(drop == other){ continue }
-      drop.marble(other.position, other.average_velocity * 7);
-    }
   }
 }
 
 
-let positions = [];
-
-function create_random_positions(n){
-  let positions = [];
-  for (let i = 0; i < n; i++) {
-    let x = randomGaussian(W/2, W/3);
-    let y = randomGaussian(H/2, H/3);
-    let position = createVector(x, y);
-    let overlaps = check_intersection(position, BASE_SIZE);
-    if (!overlaps){
-      positions.push(position);
-    }
-  }
-  return positions;
-}
-
-function add_drops(positions, interval){
-  if(t%interval != 0){ return }
-  if(next_postions.length == 0){ return }
-
-  let position = positions.pop();
-  let r = 50;
-  let drop = new Group(position.x, position.y, r, current_colour);
-  // marble_drops(drop.position, r);
-  drops.push(drop);
-}
-
-function create_regular_positions(n, rnd = 10){
-  let positions = [];
-  let nj = 7;
-  let ni = 3;
-  let yh = H-2*MW
-  let xw = W-2*MW
-  for(let i = 0; i < ni; i++){
-    for(let j = 1; j < nj; j++){
-      let x = i*xw/3 + xw/6
-      let y = j*yh/6
-      let position = createVector(x, y);
-      positions.push(position);
-    }
-  }
-  return positions;
-}
 
 function check_intersection(position, radius = BASE_SIZE){
   let overlaps = false;
@@ -158,14 +110,20 @@ function check_intersection(position, radius = BASE_SIZE){
 function mousePressed(){
   let x = mouseX - BW;
   let y = mouseY - BW;
-  let r = 1;
+  let r = 10;
 
-  if(x < r || x > W - r || y < r || y > H - r){ return }
-  let drop = new Group(x, y, r, current_colour);
-  
-  drops.push(drop);
+  add_drop(x, y, r);
 }
 
+function add_drop(x, y, r){
+  if(x < r || x > W - r || y < r || y > H - r){ return }
+  if(!r) { return}
+  let drop = new Group(x, y, r, current_colour);
+  for(let other of drops){
+    other.marble(drop.position, drop.r);
+  }
+  drops.push(drop);
+}
 
 function keyPressed() {
   if (key === 's') {

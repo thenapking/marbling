@@ -1,11 +1,15 @@
 class Agent {
   constructor(position, velocity, group) {
     this.position = position.copy();
-    this.pos2 = position.copy();
     this.group = group;
-    this.velocity = velocity || p5.Vector.random2D();
+    this.dispersion_velocity = velocity || p5.Vector.random2D();
+    this.marbling_velocity  = createVector(0, 0);
+    this.separation_velocity = createVector(0, 0);
+    this.edge_velocity = createVector(0, 0);
+
+    this.velocity = createVector(0, 0);
     this.acceleration = createVector(0, 0);
-    this.maxSpeed = 10;
+    this.maxSpeed = 20;
     this.maxForce = 0.025;
     this.active = true;
     this.size = 0;
@@ -14,88 +18,78 @@ class Agent {
   }
   
   apply_force(other_position, f, min_dist = W*2) {
-    if(f < 0.1) { return; }
+    if(f < 0.001) { return; }
+
+    
     let p = p5.Vector.sub(this.position, other_position);
     let d = p5.Vector.dist(this.position, other_position);
-    let m = p.magSq()
+    let m = p.mag()
 
     if(m < 0.001) { return; }
     if(d > min_dist) { return; }
 
-    let effect = sqrt(1 + (f ** 2) / m);
+    let effect = 0.5 * sqrt( 1 + f ** 2 / m ** 2)
 
-
-    p.mult(effect).add(other_position);
-
-    this.position.set(p)
+    p.mult(effect)
+    p.limit(5)
+    return p;
   }
 
-  separate(){
-    for(let drop of drops){
-      if(drop == this.group){ continue }
-
-      for(let agent of drop.agents){
-        let d = this.group.r/2;
-        this.apply_force(agent.position, 0.5, d);
-      }
+  hard_edges() {
+    if (this.position.x < 0) {
+      this.position.x = 1;
+    } else if (this.position.x > W) {
+      this.position.x = W-1;
+    }
+    if (this.position.y < 0) {
+      this.position.y = 1;
+    } else if (this.position.y > H) {
+      this.position.y = H-1;
     }
   }
 
-
-
-  edge_force() {
-    let left =   createVector(0, this.position.y);
-    let right =  createVector(W, this.position.y);
-    let top =    createVector(this.position.x, 0);
-    let bottom = createVector(this.position.x, H);
-    let left_force = 1/(this.position.x);
-    let top_force = 1/(this.position.y);
-    let bottom_force = 1/(H - this.position.y);
-    let right_force = 1/(W - this.position.x);
-
-    let sf = 100 * this.velocity.mag();
-
-    constrain(left_force, 0, 1);
-    constrain(top_force, 0, 1);
-    constrain(bottom_force, 0, 1);
-    constrain(right_force, 0, 1);
-
-    this.apply_force(left, left_force * sf);
-    this.apply_force(right, right_force * sf);
-    this.apply_force(top, top_force * sf);
-    this.apply_force(bottom, bottom_force * sf);
-    this.edges();
-
-  }
-
-  edges(d = 1) {
-    if (this.position.x < d) {
-      this.position.x = d;
-    } else if (this.position.x > W-d) {
-      this.position.x = W-d;
-    }
-    if (this.position.y < d) {
-      this.position.y = d;
-    } else if (this.position.y > H-d) {
-      this.position.y = H-d;
+  update_by(v, reduction = 0.8){
+    v.limit(this.maxSpeed);
+    this.position.add(v);
+    v.mult(reduction);
+    if(v.mag() < 0.001){
+      v.mult(0);
     }
   }
 
+  intersects(drop) {
+    let inside = false;
+    let n = drop.agents.length;
+    for(let i = 1; i < n; i++) {
+      let j = (i - 1) % n;
+
+      let pi = drop.agents[i].position;
+      let pj = drop.agents[j].position;
+
+      
+      
+      let intersect = ((pi.y > this.position.y) != (pj.y > this.position.y)) && (this.position.x < (pj.x - pi.x) * (this.position.y - pi.y) / (pj.y - pi.y) + pi.x);
+      if (intersect) inside = !inside;
+    }
+
+    return inside;
+  }
   
   update() {
-    this.velocity.add(this.acceleration);
-    this.velocity.limit(this.maxSpeed);
-    this.position.add(this.velocity);
-    this.acceleration.mult(0);
-    this.velocity.mult(0.95); // important to get this right for the cube-y effect
-    if (this.velocity.mag() < 0.001) {
-      this.active = false;
-      this.velocity.mult(0);
-    }
+    this.update_by(this.dispersion_velocity, 0.8);
+    this.update_by(this.marbling_velocity, 0.75);
+    this.update_by(this.separation_velocity, 0.8);
   }
 
-  marble(other_position, r) {
-    this.apply_force(other_position, r);
-    this.edges();
+  separate(other_position, other_r) {
+    let p = this.apply_force(other_position, other_r);
+    p.mult(0.1);
+    this.separation_velocity.add(p);
+  }
+
+  marble(other_position, other_r) {
+    let p  = this.apply_force(other_position, other_r);
+    this.marbling_velocity.add(p);
   }
 }
+
