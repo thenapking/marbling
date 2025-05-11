@@ -3,7 +3,7 @@ class Group {
   constructor(x, y, r, idx) {
     this.x = x;
     this.y = y;
-    this.r = 5;
+    this.r = r;
 
     this.position = createVector(x, y); 
     this.average_position = createVector(x, y);
@@ -12,6 +12,7 @@ class Group {
 
     this.agents = [];
     this.initialize(r);
+
   }
 
   initialize(r) {
@@ -29,9 +30,17 @@ class Group {
 
   marble(position, r) {  
     for(let agent of this.agents){
-      agent.marble(position, r);
+      let p = agent.position.copy();
+      p.sub(position);
+      let m = p.mag();
+      let root = sqrt(1 + (r * r) / (m * m));
+      p.mult(root);
+      p.add(position);
+      agent.position.set(p);
     }   
+    
   }
+
 
 
   edges(){

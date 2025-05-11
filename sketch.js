@@ -93,7 +93,7 @@ function draw_drops(){
 function update_groups(){
   for(let drop of drops){
     
-    drop.update();
+    // drop.update();
 
     
   }
@@ -115,7 +115,7 @@ function check_intersection(position, radius = BASE_SIZE){
 function mousePressed(){
   let x = mouseX - BW;
   let y = mouseY - BW;
-  let r = 10;
+  let r = 50;
 
 
   add_drop(x, y, r);
