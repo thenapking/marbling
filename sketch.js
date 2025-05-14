@@ -23,7 +23,7 @@ let palette_name = "marble";
 let palette = palettes[palette_name];
 let bg = palette[0];
 
-let debug = true;
+let debug = false;
 
 let drops = [];
 let t =0 ;
@@ -150,7 +150,7 @@ function recurse(drop, other, visited = new Set()){
 
 function marble(drop){
   for(let other of drops){
-    other.marble(drop.position, drop.radius);
+    other.marble(drop.position, drop.radius*1.2);
   }
 }
 

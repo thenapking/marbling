@@ -1,5 +1,6 @@
-const AGENT_RADIUS = 5;
+const AGENT_RADIUS = 2;
 const desiredSeparation = 10;
+const AGENT_SPACING = 4;
 const MAX_SPEED = 1;
 const MAX_FORCE = 0.1;
 const SEPARATION = 1.5
@@ -12,7 +13,7 @@ class Agent {
     this.velocity = velocity.copy();
     this.acceleration = createVector(0, 0);
 
-    this.mass         = 1.25;
+    this.mass         = 20;
     this.radius       = AGENT_RADIUS;
     this.separating    = false;
   }
@@ -48,7 +49,7 @@ class Agent {
         if (this === other) continue;
 
         const d = this.position.dist(other.position);
-        const minDist = this.radius + other.radius;
+        const minDist = AGENT_RADIUS
 
         if (d <= minDist) {
           // Resolve overlap
@@ -74,48 +75,19 @@ class Agent {
   }
 
   addForce(force) {
-    this.velocity.add(force.div(this.mass));
+    force.limit(MAX_FORCE);
+    this.velocity.add(force);
     this.velocity.limit(MAX_SPEED);
   }
-
-
 
   update(){
     this.checkCollision();
     this.checkEdges();
-    // this.addForce(this.acceleration);
-    // if(!this.separating){
-    //   this.velocity.mult(0.5);
-    // }
     this.position.add(this.velocity);
     this.velocity.mult(0.1);
-
-   
   }
 
 
-  // update(){
-  //   let separation = this.separation(this).mult(SEPARATION); 
-
-  //   this.acceleration.add(separation);
-  //   this.acceleration.limit(MAX_FORCE);
-  //   this.velocity.add(this.acceleration);
-  //   this.velocity.limit(this.maxSpeed);
-  //   this.position.add(this.velocity);
-  //   this.position.add(this.dispersion_velocity);
-
-  //   this.acceleration.mult(0);
-  //   this.velocity.mult(0);
-
-  // this.position.x = (this.position.x + width) % width;
-  // this.position.y = (this.position.y + height) % height;
-
-  //   this.dispersion_velocity.mult(0.95)
-
-  //   if(this.dispersion_velocity.mag() < 0.1){
-  //     this.dispersion_velocity = createVector(0,0);
-  //   }
-  // }
 
   draw(){
     circle(this.position.x, this.position.y, this.radius * 2);

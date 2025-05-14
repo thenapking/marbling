@@ -35,7 +35,7 @@ class Group {
       this.agents.push(agent);
     }
 
-    for (let stride = 1; stride <= 3; stride++) {
+    for (let stride = 1; stride <= 4; stride++) {
       for (let i = 0; i < this.agents.length; i++) {
         const a = this.agents[i];
         const b = this.agents[(i + stride) % this.agents.length];
@@ -81,8 +81,9 @@ class Group {
 
     if(valid) { this.disp(agent); }
     if(this.parent) { this.disp(agent); }
-    
   }
+
+
 
   disp(agent){
     let v = p5.Vector.sub(agent.position, this.position).normalize();  
@@ -91,9 +92,49 @@ class Group {
     agent.addForce(v);
   }
 
+  contraction(){
+    let should_contract = false;
+    for(let other of drops){
+      if(other === this) { continue; }
+
+      for(let child of this.children){
+        if(other === child) { continue; }
+      }
+      
+      for(let agent of this.agents){
+        for(let other_agent of other.agents){
+          let dist = agent.position.dist(other_agent.position);
+          if(dist < 2){
+            should_contract = true;
+            break;
+          }
+        }
+
+        if(should_contract) break;
+      }
+    }
+
+    if(should_contract){
+      for(let agent of this.agents){
+        this.contract(agent);
+      }
+    }
+  }
+
+  contract(agent){
+    let v = p5.Vector.sub(agent.position, this.position).normalize();  
+    v.mult(-1);
+    agent.addForce(v);
+  }
+
   update(){
     this.intersecting();
-    this.constrain();
+    // this.constrain();
+    this.contraction();
+
+    for(let spring of this.springs){
+      spring.update();
+    }
     
     let new_position = createVector(0,0)
     for(let agent of this.agents){
@@ -175,6 +216,27 @@ class Group {
     return count;
   }
 
+  clean_vertices(){
+    let new_vertices = [];
+    for(let agent of this.agents){
+      let p = agent.position.copy();
+      new_vertices.push(p);
+    }
+
+    // let cleaned = chaikin(new_vertices, 8);
+
+    // beginShape();
+    //   for (let v of cleaned) {
+    //     vertex(v.x, v.y);
+    //   }
+    // endShape(CLOSE);
+
+    // drawSmoothCurve(new_vertices, 10);
+
+    drawBSpline(new_vertices, 48);
+
+  }
+
   draw() {
     if(debug){
       noFill();
@@ -185,11 +247,13 @@ class Group {
     }
 
     beginShape();
-      for(let agent of this.agents){
-        let v = agent.position;
-        vertex(v.x, v.y);
-      }
+    for (let agent of this.agents) {
+      let p = agent.position.copy();
+      vertex(p.x, p.y);
+    }
     endShape(CLOSE);
+
+   
 
     if(debug){
       fill(palette[this.idx]);
@@ -207,3 +271,100 @@ class Group {
     }
   }
 }
+
+
+// Chaikin smoothing: returns a *new* array of p5.Vector
+function chaikin(points, iterations) {
+  let pts = points.slice();
+  for (let k = 0; k < iterations; k++) {
+    let next = [];
+    for (let i = 0; i < pts.length; i++) {
+      let p0 = pts[i];
+      let p1 = pts[(i + 1) % pts.length];
+      // Q = 3/4*p0 + 1/4*p1
+      next.push(createVector(
+        0.75 * p0.x + 0.25 * p1.x,
+        0.75 * p0.y + 0.25 * p1.y
+      ));
+      // R = 1/4*p0 + 3/4*p1
+      next.push(createVector(
+        0.25 * p0.x + 0.75 * p1.x,
+        0.25 * p0.y + 0.75 * p1.y
+      ));
+    }
+    pts = next;
+  }
+  return pts;
+}
+
+function drawSmoothCurve(vertices, samplesPerEdge=10) {
+  beginShape();
+  // duplicate last two to feed into the spline
+  let n = vertices.length;
+  curveVertex(vertices[n-2].x, vertices[n-2].y);
+  curveVertex(vertices[n-1].x, vertices[n-1].y);
+
+  // for each original edge, sample along the spline
+  for (let i = 0; i < n; i++) {
+    let prev = vertices[(i-1+n)%n];
+    let curr = vertices[i];
+    let next = vertices[(i+1)%n];
+    let next2 = vertices[(i+2)%n];
+    // generate intermediate points by t = 0..1 in samplesPerEdge steps
+    for (let s = 0; s <= samplesPerEdge; s++) {
+      let t = s / samplesPerEdge;
+      // Catmull–Rom formula courtesy of p5.js's internal
+      let x = curvePoint(prev.x, curr.x, next.x, next2.x, t);
+      let y = curvePoint(prev.y, curr.y, next.y, next2.y, t);
+      curveVertex(x, y);
+    }
+  }
+
+  // close the loop
+  curveVertex(vertices[0].x, vertices[0].y);
+  curveVertex(vertices[1].x, vertices[1].y);
+  endShape(CLOSE);
+}
+
+
+// evaluate a single point on a uniform cubic B-spline
+function bsplinePoint(ctrlPts, t) {
+  let n = ctrlPts.length;
+  // wrap indices
+  let i = floor(t * n);
+  let f = t * n - i;
+  // get four consecutive control points
+  let p0 = ctrlPts[(i-1 + n)%n];
+  let p1 = ctrlPts[i % n];
+  let p2 = ctrlPts[(i+1)%n];
+  let p3 = ctrlPts[(i+2)%n];
+  // basis functions
+  let b0 = ((-f+2)*f - 1)*f/2;
+  let b1 = (((3*f - 5)*f)*f + 2)/2;
+  let b2 = ((-3*f + 4)*f + 1)*f/2;
+  let b3 = ((f - 1)*f*f)/2;
+  return createVector(
+    p0.x*b0 + p1.x*b1 + p2.x*b2 + p3.x*b3,
+    p0.y*b0 + p1.y*b1 + p2.y*b2 + p3.y*b3
+  );
+}
+
+function drawBSpline(verts, samples=200) {
+  beginShape();
+  let p = bsplinePoint(verts, 0);
+  curveVertex(p.x, p.y);
+  for (let i = 0; i <= samples; i++) {
+    let t = i / samples;
+    let p = bsplinePoint(verts, t);
+    curveVertex(p.x, p.y);
+  }
+  let p1 = bsplinePoint(verts, 1);
+  curveVertex(p1.x, p1.y);
+  let p2 = bsplinePoint(verts, 0);
+  curveVertex(p2.x, p2.y);
+
+  endShape(CLOSE);
+}
+
+
+

@@ -5,7 +5,7 @@ class Spring {
     this.B = B;
     this.length = length;
     this.stiffness  = stiffness;
-    this.damping    = 0.4;
+    this.damping    = 0.5;
   }
 
   update() {
