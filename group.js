@@ -19,9 +19,9 @@ class Group {
     for (let i = 0; i < RES; i++) {
       let angle = map(i, 0, RES, 0, TWO_PI);
       let p = createVector(cos(angle), sin(angle));
-      p.add(this.position);
+      p.mult(r).add(this.position);
       let v = createVector(cos(angle), sin(angle))
-      v.mult(r)
+      v.mult(2)
       let agent = new Agent(p, v, this);
       this.agents[i] = agent;
     }
