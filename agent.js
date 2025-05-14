@@ -1,6 +1,6 @@
 const AGENT_RADIUS = 1;
 const AGENT_SPACING = 4;
-const MAX_SPEED = 10;
+const MAX_SPEED = 1;
 const MAX_FORCE = 0.1;
 const EDGES = 0.025
 class Agent {
@@ -47,7 +47,7 @@ class Agent {
         if (this === other) continue;
 
         const d = this.position.dist(other.position);
-        const minDist = AGENT_RADIUS
+        const minDist = AGENT_RADIUS + 2
 
         if (d <= minDist) {
           // Resolve overlap

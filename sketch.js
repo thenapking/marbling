@@ -45,9 +45,9 @@ function setup() {
   pixelDensity(1);
 
   p5grain.setup();
-  line_of_drops(W/4, 6);
-  line_of_drops(W/2, 6);
-  line_of_drops(3*W/4, 6);
+  // line_of_drops(W/4, 6);
+  // line_of_drops(W/2, 6);
+  // line_of_drops(3*W/4, 6);
 }
 
 function draw() {
@@ -171,6 +171,18 @@ function recurse(drop, other, visited = new Set()){
       drop.parent = other;
       drop.dispersion_factor = DISPERSION_RATIO * drop.parent.dispersion_factor;
       other.children.push(drop);
+
+      let parent_radius = 0;
+      for(let agent of drop.parent.agents){
+        let d = dist(agent.position.x, agent.position.y, drop.parent.position.x, drop.parent.position.y);
+        parent_radius += d;
+      }
+      parent_radius /= drop.agents.length;
+      drop.radius = parent_radius * 0.5;
+      drop.agents = [];
+      drop.springs = [];
+      drop.initialize(drop.radius);
+
     }
   }
 
@@ -179,7 +191,7 @@ function recurse(drop, other, visited = new Set()){
 
 function marble(drop){
   let sf = 1
-  if(!marbling) { sf = 0.5 }
+  if(!marbling) { sf = 0.66 }
   
   for(let other of drops){
     other.marble(drop.position, drop.radius*GROUP_INITIAL_SEPARATION_FACTOR*sf);
@@ -193,8 +205,10 @@ function keyPressed() {
 
   if(key === 'c') {
     current_colour++;
+    current_size-=10;
     current_colour = current_colour % palette.length;
     console.log("current_colour", palette[current_colour]);
+    console.log("current_size", current_size);
   }
 
   if(key === ' ') {

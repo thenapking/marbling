@@ -75,7 +75,7 @@ class Group {
     let v = p5.Vector.sub(agent.position, this.position).normalize();  
     let sf = map(this.age, 0, MAX_AGE, this.dispersion_factor, 0);
     v.mult(sf);
-    agent.addForce(v, MAX_FORCE*2);
+    agent.addForce(v, MAX_FORCE);
   }
 
 
@@ -87,6 +87,7 @@ class Group {
     }
     
     let new_position = createVector(0,0)
+    
     for(let agent of this.agents){
       this.disperse(agent);
       agent.update()
