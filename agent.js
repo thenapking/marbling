@@ -1,14 +1,15 @@
 const AGENT_RADIUS = 5;
 const desiredSeparation = 10;
-const MAX_SPEED = 3;
+const MAX_SPEED = 1;
 const MAX_FORCE = 0.1;
 const SEPARATION = 1.5
 class Agent {
-  constructor(position, velocity, group) {
+  constructor(position, dispersion_velocity, group) {
     this.position = position.copy();
     this.group = group;
 
-    this.velocity = velocity.copy();
+    this.velocity = createVector(0,0);
+    this.dispersion_velocity = dispersion_velocity.copy();
     this.acceleration = createVector(0, 0);
     this.radius  = AGENT_RADIUS;
   }
@@ -36,6 +37,7 @@ class Agent {
           count++;
         }
       }
+
     }
   
     if (count > 0) {
@@ -47,14 +49,25 @@ class Agent {
 
   update(){
     let separation = this.separation(this).mult(SEPARATION); 
-    this.velocity.add(separation);
+
+    this.acceleration.add(separation);
+    this.acceleration.limit(MAX_FORCE);
+    this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxSpeed);
     this.position.add(this.velocity);
+    this.position.add(this.dispersion_velocity);
+
+    this.acceleration.mult(0);
+    this.velocity.mult(0);
 
     this.position.x = (this.position.x + width) % width;
     this.position.y = (this.position.y + height) % height;
 
-    this.velocity.mult(0.95);
+    this.dispersion_velocity.mult(0.95)
+
+    if(this.dispersion_velocity.mag() < 0.1){
+      this.dispersion_velocity = createVector(0,0);
+    }
   }
 
 }

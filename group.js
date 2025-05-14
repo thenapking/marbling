@@ -21,10 +21,29 @@ class Group {
       let p = createVector(cos(angle), sin(angle));
       p.mult(radius).add(this.position);
       let v = createVector(cos(angle), sin(angle))
-      v.mult(0.5)
+      v.mult(2)
       let agent = new Agent(p, v, this);
       this.agents[i] = agent;
     }
+  }
+
+  resample(){
+    let vertices = [];
+    let prev = this.agents[this.agents.length - 1].position;
+    for(let i = 0; i < this.agents.length; i++){
+      let agent = this.agents[i];
+      let v = agent.position;
+      if(v.dist(prev) > AGENT_RADIUS*4){
+        let new_position = p5.Vector.lerp(v, prev, 0.5)
+        let velocity_mag  = agent.dispersion_velocity.mag();
+        let new_velocity = p5.Vector.sub(new_position, this.position).normalize().mult(velocity_mag);
+        let new_agent = new Agent(new_position, new_velocity, this);
+        vertices.push(new_agent);
+      }
+      vertices.push(agent);
+      prev = v;
+    }
+    this.agents = vertices;
   }
 
   calculate_resolution(){
@@ -50,12 +69,12 @@ class Group {
       noStroke();
     }
 
-    // beginShape();
-    //   for(let agent of this.agents){
-    //     let v = agent.position;
-    //     vertex(v.x, v.y);
-    //   }
-    // endShape(CLOSE);
+    beginShape();
+      for(let agent of this.agents){
+        let v = agent.position;
+        vertex(v.x, v.y);
+      }
+    endShape(CLOSE);
 
     if(debug){
       fill(palette[this.idx]);

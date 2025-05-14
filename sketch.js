@@ -107,6 +107,8 @@ function add_drop(x, y, r){
   //   other.marble(drop.position, drop.r);
   // }
   drops.push(drop);
+  current_colour++; 
+  current_colour = current_colour % palette.length;
 }
 
 function keyPressed() {
