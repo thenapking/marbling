@@ -93,7 +93,7 @@ function draw_drops(){
 function update_groups(){
   for(let drop of drops){
     
-    // drop.update();
+    drop.update();
 
     
   }
