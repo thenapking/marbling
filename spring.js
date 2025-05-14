@@ -1,9 +1,9 @@
 // Simple spring between two particles
 class Spring {
-  constructor(A, B, restLength, stiffness) {
+  constructor(A, B, length, stiffness) {
     this.A = A;
     this.B = B;
-    this.restLength = restLength;
+    this.length = length;
     this.stiffness  = stiffness;
     this.damping    = 0.4;
   }
@@ -13,7 +13,7 @@ class Spring {
     const dst   = delta.mag();
 
     if (dst < 0.001) return;
-    const deform   = dst - this.restLength;
+    const deform   = dst - this.length;
     const restore = this.stiffness * deform
     let dd = createVector(0, 0);
     if(dst > 0) {

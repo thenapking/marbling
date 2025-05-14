@@ -3,6 +3,7 @@ const desiredSeparation = 10;
 const MAX_SPEED = 1;
 const MAX_FORCE = 0.1;
 const SEPARATION = 1.5
+const EDGES = 0.025
 class Agent {
   constructor(position, velocity, group) {
     this.position = position.copy();
@@ -20,21 +21,21 @@ class Agent {
     // Bounce off canvas edges with damping
     if (this.position.x - this.radius < 0) {
       this.position.x = this.radius;
-      this.velocity.x *= -0.25;
+      this.velocity.x *= -EDGES;
       this.addForce(createVector(1, 0));
     } else if (this.position.x + this.radius > W) {
       this.position.x = W - this.radius;
-      this.velocity.x *= -0.25;
+      this.velocity.x *= -EDGES;
       this.addForce(createVector(-1, 0));
     }
 
     if (this.position.y - this.radius < 0) {
       this.position.y = this.radius;
-      this.velocity.y *= -0.25;
+      this.velocity.y *= -EDGES;
       this.addForce(createVector(0, 1));
     } else if (this.position.y + this.radius > H) {
       this.position.y = H - this.radius;
-      this.velocity.y *= -0.25;
+      this.velocity.y *= -EDGES;
       this.addForce(createVector(0, -1));
     }
   }
@@ -74,6 +75,7 @@ class Agent {
 
   addForce(force) {
     this.velocity.add(force.div(this.mass));
+    this.velocity.limit(MAX_SPEED);
   }
 
 
@@ -81,12 +83,14 @@ class Agent {
   update(){
     this.checkCollision();
     this.checkEdges();
-    this.addForce(this.acceleration);
-    if(!this.separating){
-      this.velocity.mult(0.95);
-    }
+    // this.addForce(this.acceleration);
+    // if(!this.separating){
+    //   this.velocity.mult(0.5);
+    // }
     this.position.add(this.velocity);
-    // this.velocity.mult(1);
+    this.velocity.mult(0.1);
+
+   
   }
 
 
@@ -103,8 +107,8 @@ class Agent {
   //   this.acceleration.mult(0);
   //   this.velocity.mult(0);
 
-  //   this.position.x = (this.position.x + width) % width;
-  //   this.position.y = (this.position.y + height) % height;
+  // this.position.x = (this.position.x + width) % width;
+  // this.position.y = (this.position.y + height) % height;
 
   //   this.dispersion_velocity.mult(0.95)
 

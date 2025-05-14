@@ -30,6 +30,7 @@ let t =0 ;
 let paused  = false;
 
 let current_colour = 1;
+let current_size = 50;
 
 let granularity = 5;
 
@@ -93,24 +94,25 @@ function update_groups(){
 function mousePressed(){
   let x = mouseX - BW;
   let y = mouseY - BW;
-  let r = random(20, 50);
+  current_size-= 0.2
 
-  add_drop(x, y, r);
+  add_drop(x, y, current_size);
 
 }
 
 function add_drop(x, y, r){
+  if(r < 5) { return }
   if(x < r || x > W - r || y < r || y > H - r){ return }
   if(!r) { return}
   let drop = new Group(x, y, r, current_colour);
   
-  let valid = !drop.intersecting();
-  if(!valid){
-    return;
-  }
-  // for(let other of drops){
-  //   other.marble(drop.position, drop.r);
+  // let valid = !drop.intersecting();
+  // if(!valid){
+  //   return;
   // }
+  for(let other of drops){
+    other.marble(drop.position, drop.radius);
+  }
   drops.push(drop);
   current_colour++; 
   current_colour = current_colour % palette.length;
