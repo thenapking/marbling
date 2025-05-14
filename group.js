@@ -10,40 +10,34 @@ class Group {
     this.idx = idx;
 
     this.agents = [];
+    this.springs = [];
     this.initialize(radius);
 
   }
 
   initialize(radius) {
     let resolution = this.calculate_resolution();
+
     for (let i = 0; i < resolution; i++) {
       let angle = map(i, 0, resolution, 0, TWO_PI);
       let p = createVector(cos(angle), sin(angle));
       p.mult(radius).add(this.position);
       let v = createVector(cos(angle), sin(angle))
-      v.mult(2)
+      v.mult(0.5)
       let agent = new Agent(p, v, this);
-      this.agents[i] = agent;
+      this.agents.push(agent);
     }
-  }
 
-  resample(){
-    let vertices = [];
-    let prev = this.agents[this.agents.length - 1].position;
-    for(let i = 0; i < this.agents.length; i++){
-      let agent = this.agents[i];
-      let v = agent.position;
-      if(v.dist(prev) > AGENT_RADIUS*4){
-        let new_position = p5.Vector.lerp(v, prev, 0.5)
-        let velocity_mag  = agent.dispersion_velocity.mag();
-        let new_velocity = p5.Vector.sub(new_position, this.position).normalize().mult(velocity_mag);
-        let new_agent = new Agent(new_position, new_velocity, this);
-        vertices.push(new_agent);
+    for (let stride = 1; stride <= 3; stride++) {
+      for (let i = 0; i < this.agents.length; i++) {
+        const a = this.agents[i];
+        const b = this.agents[(i + stride) % this.agents.length];
+        const length = dist(a.position.x, a.position.y, b.position.x, b.position.y);
+        this.springs.push(new Spring(a, b, length, 0.2));
       }
-      vertices.push(agent);
-      prev = v;
     }
-    this.agents = vertices;
+
+    
   }
 
   calculate_resolution(){
@@ -55,9 +49,38 @@ class Group {
 
 
   update(){
+    this.intersecting();
+
+    for(let spring of this.springs){
+      spring.update();
+    }
+
     for(let agent of this.agents){
       agent.update()
+      agent.separating = false;
     }
+  }
+
+  intersecting(){
+    let n = this.agents.length;
+    for(let drop of drops){
+      if(drop === this) continue; 
+      let count = 0;
+      for (let agent of this.agents) {
+        if (this === agent) continue;
+
+        if(agent.in(drop)){
+          count++;
+        }
+      }
+      if(count > 0 && count < n){
+        for(let agent of this.agents){
+          agent.separating = true;
+        }
+        return true;
+      }
+    }
+    return false;
   }
 
   draw() {
@@ -69,18 +92,23 @@ class Group {
       noStroke();
     }
 
-    beginShape();
-      for(let agent of this.agents){
-        let v = agent.position;
-        vertex(v.x, v.y);
-      }
-    endShape(CLOSE);
+    // beginShape();
+    //   for(let agent of this.agents){
+    //     let v = agent.position;
+    //     vertex(v.x, v.y);
+    //   }
+    // endShape(CLOSE);
 
     if(debug){
       fill(palette[this.idx]);
       for(let agent of this.agents){
-        let v = agent.position;
-        circle(v.x, v.y, agent.radius * 2);
+        agent.draw();
+      }
+
+      noFill();
+      strokeWeight(1);
+      for(let spring of this.springs){
+        spring.draw();
       }
     }
   }

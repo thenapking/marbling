@@ -93,7 +93,7 @@ function update_groups(){
 function mousePressed(){
   let x = mouseX - BW;
   let y = mouseY - BW;
-  let r = 50;
+  let r = random(20, 50);
 
   add_drop(x, y, r);
 
@@ -103,6 +103,11 @@ function add_drop(x, y, r){
   if(x < r || x > W - r || y < r || y > H - r){ return }
   if(!r) { return}
   let drop = new Group(x, y, r, current_colour);
+  
+  let valid = !drop.intersecting();
+  if(!valid){
+    return;
+  }
   // for(let other of drops){
   //   other.marble(drop.position, drop.r);
   // }

@@ -4,70 +4,133 @@ const MAX_SPEED = 1;
 const MAX_FORCE = 0.1;
 const SEPARATION = 1.5
 class Agent {
-  constructor(position, dispersion_velocity, group) {
+  constructor(position, velocity, group) {
     this.position = position.copy();
     this.group = group;
 
-    this.velocity = createVector(0,0);
-    this.dispersion_velocity = dispersion_velocity.copy();
+    this.velocity = velocity.copy();
     this.acceleration = createVector(0, 0);
-    this.radius  = AGENT_RADIUS;
+
+    this.mass         = 1.25;
+    this.radius       = AGENT_RADIUS;
+    this.separating    = false;
   }
 
-  separation() {
-    let steer = createVector(0, 0);
+  checkEdges() {
+    // Bounce off canvas edges with damping
+    if (this.position.x - this.radius < 0) {
+      this.position.x = this.radius;
+      this.velocity.x *= -0.25;
+      this.addForce(createVector(1, 0));
+    } else if (this.position.x + this.radius > W) {
+      this.position.x = W - this.radius;
+      this.velocity.x *= -0.25;
+      this.addForce(createVector(-1, 0));
+    }
+
+    if (this.position.y - this.radius < 0) {
+      this.position.y = this.radius;
+      this.velocity.y *= -0.25;
+      this.addForce(createVector(0, 1));
+    } else if (this.position.y + this.radius > H) {
+      this.position.y = H - this.radius;
+      this.velocity.y *= -0.25;
+      this.addForce(createVector(0, -1));
+    }
+  }
+
+  checkCollision() {
     let count = 0;
-    
     for(let drop of drops){
+      if(drop === this.group) continue; 
       for (let other of drop.agents) {
-        if (other === this) continue;
-    
-        // vector from other→b
-        let diff = p5.Vector.sub(this.position, other.position);
-    
-        if      (diff.x >  width/2) diff.x -= width;
-        else if (diff.x < -width/2) diff.x += width;
-        if      (diff.y >  height/2) diff.y -= height;
-        else if (diff.y < -height/2) diff.y += height;
-    
-        let d = diff.mag();
-        if (d > 0 && d < this.radius * 2) {
-          diff.normalize().div(d);
-          steer.add(diff);
+        if (this === other) continue;
+
+        const d = this.position.dist(other.position);
+        const minDist = this.radius + other.radius;
+
+        if (d <= minDist) {
+          // Resolve overlap
+          const normal = p5.Vector.sub(other.position, this.position).normalize();
+          const relVel = p5.Vector.sub(other.velocity, this.velocity);
+
+          // Basic impulse
+          const impulseMag = 2 * p5.Vector.dot(relVel, normal) / 2;
+          const impulse = p5.Vector.mult(normal, impulseMag);
+          const correction = p5.Vector.mult(normal, minDist - d);
+
+          this.addForce(impulse.copy().div(this.mass));
+          other.addForce(impulse.copy().div(-other.mass));
+
+          // Positional correction
+          this.addForce(correction.copy().div(-this.mass));
+          other.addForce(correction.copy().div(other.mass));
           count++;
         }
       }
-
     }
-  
-    if (count > 0) {
-      steer.div(count);
-      steer.setMag(MAX_SPEED).sub(this.velocity).limit(MAX_FORCE);
-    }
-    return steer;
+    return count;
   }
 
+  addForce(force) {
+    this.velocity.add(force.div(this.mass));
+  }
+
+
+
   update(){
-    let separation = this.separation(this).mult(SEPARATION); 
-
-    this.acceleration.add(separation);
-    this.acceleration.limit(MAX_FORCE);
-    this.velocity.add(this.acceleration);
-    this.velocity.limit(this.maxSpeed);
-    this.position.add(this.velocity);
-    this.position.add(this.dispersion_velocity);
-
-    this.acceleration.mult(0);
-    this.velocity.mult(0);
-
-    this.position.x = (this.position.x + width) % width;
-    this.position.y = (this.position.y + height) % height;
-
-    this.dispersion_velocity.mult(0.95)
-
-    if(this.dispersion_velocity.mag() < 0.1){
-      this.dispersion_velocity = createVector(0,0);
+    this.checkCollision();
+    this.checkEdges();
+    this.addForce(this.acceleration);
+    if(!this.separating){
+      this.velocity.mult(0.95);
     }
+    this.position.add(this.velocity);
+    // this.velocity.mult(1);
+  }
+
+
+  // update(){
+  //   let separation = this.separation(this).mult(SEPARATION); 
+
+  //   this.acceleration.add(separation);
+  //   this.acceleration.limit(MAX_FORCE);
+  //   this.velocity.add(this.acceleration);
+  //   this.velocity.limit(this.maxSpeed);
+  //   this.position.add(this.velocity);
+  //   this.position.add(this.dispersion_velocity);
+
+  //   this.acceleration.mult(0);
+  //   this.velocity.mult(0);
+
+  //   this.position.x = (this.position.x + width) % width;
+  //   this.position.y = (this.position.y + height) % height;
+
+  //   this.dispersion_velocity.mult(0.95)
+
+  //   if(this.dispersion_velocity.mag() < 0.1){
+  //     this.dispersion_velocity = createVector(0,0);
+  //   }
+  // }
+
+  draw(){
+    circle(this.position.x, this.position.y, this.radius * 2);
+  }
+
+  in(drop){
+    let inside = false;
+
+    for(let i = 0, j = drop.agents.length - 1; i < drop.agents.length; j = i++) {
+      let xi = drop.agents[i].position.x, yi = drop.agents[i].position.y;
+      let xj = drop.agents[j].position.x, yj = drop.agents[j].position.y;
+
+      // Check if the point is on an edge or vertex
+      if ((this.position.y > yi) != (this.position.y > yj) && (this.position.x < (xj - xi) * (this.position.y - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+
+    return inside;
   }
 
 }
