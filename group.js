@@ -1,6 +1,7 @@
 const RES = 200;
 const SPACING_FACTOR = 1.25;
 const MAX_AGE = 100;  
+const DISPERSION_RATIO = 0.5;
 class Group {
   constructor(x, y, radius, idx) {
     this.x = x;
@@ -15,6 +16,9 @@ class Group {
     this.initialize(radius);
     this.age = 0;
     this.inside = false;
+    this.parent = null;
+    this.children = [];
+    this.dispersion_factor = 1;
 
   }
 
@@ -65,7 +69,7 @@ class Group {
 
   disperse(agent){
     if(this.age > 100) { return; }
-
+    
     let valid = true;
     for(let other of drops){
       if(other === this) continue; 
@@ -76,13 +80,13 @@ class Group {
     }
 
     if(valid) { this.disp(agent); }
-    if(this.inside){ this.disp(agent, 0.25); }
+    if(this.parent) { this.disp(agent); }
     
   }
 
-  disp(agent, ff = 1){
+  disp(agent){
     let v = p5.Vector.sub(agent.position, this.position).normalize();  
-    let sf = map(this.age, 0, MAX_AGE, ff, 0);
+    let sf = map(this.age, 0, MAX_AGE, this.dispersion_factor, 0);
     v.mult(sf);
     agent.addForce(v);
   }
@@ -92,7 +96,6 @@ class Group {
     this.constrain();
     
     let new_position = createVector(0,0)
-
     for(let agent of this.agents){
       this.disperse(agent);
       agent.update()
@@ -123,19 +126,9 @@ class Group {
     let n = this.agents.length;
     for(let drop of drops){
       if(drop === this) continue; 
-      let count = 0;
-      for (let agent of this.agents) {
-        if (this === agent) continue;
 
-        if(agent.in(drop)){
-          count++;
-        }
-      }
-
-      if(count == n){
-        this.inside = true;
-      }
-
+      let count = this.number_of_agents_in(drop);
+      
       if(count > 0 && count < n){
         for(let agent of this.agents){
           agent.separating = true;
@@ -143,7 +136,43 @@ class Group {
         return true;
       }
     }
+
     return false;
+  }
+
+  // FIX THE NAMING AND LOGIC
+  wrong_logic(drop){
+    if(drop === this) return false;
+
+    let count = this.number_of_agents_in(drop);
+    let it_works = (count == this.agents.length);
+
+    if(it_works){
+      console.log(drop.idx, "contains", this.idx);
+      return true;
+    } else {
+      console.log(drop.idx, "does not contain", this.idx);
+      return false;
+    }
+
+  }
+
+  contains(drop){
+    return drop.wrong_logic(this);
+  }
+
+  number_of_agents_in(drop){
+    if(drop === this) return 0;
+
+    let count = 0;
+    for (let agent of this.agents) {
+
+      if(agent.in(drop)){
+        count++;
+      }
+    }
+
+    return count;
   }
 
   draw() {

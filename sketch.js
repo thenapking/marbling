@@ -29,7 +29,7 @@ let drops = [];
 let t =0 ;
 let paused  = false;
 
-let current_colour = 1;
+let current_colour = 2;
 let current_size = 50;
 
 let granularity = 5;
@@ -85,6 +85,7 @@ function draw_drops(){
 function update_groups(){
   for(let drop of drops){
     drop.update();
+    
   }
 }
 
@@ -104,18 +105,53 @@ function add_drop(x, y, r){
   if(r < 5) { return }
   if(x < r || x > W - r || y < r || y > H - r){ return }
   if(!r) { return}
+
+  
+
   let drop = new Group(x, y, r, current_colour);
   
-  // let valid = !drop.intersecting();
-  // if(!valid){
-  //   return;
-  // }
+  marble(drop);
+  drops.push(drop);
+
+ 
+  let visited = new Set();
+  for(other of drops){
+    visited = recurse(drop, other, visited);
+  }
+
+
+  if(drops.length > 0){
+    let other = drops[0]
+    console.log("other", drop.contains(other));
+  }
+  
+ 
+}
+
+function recurse(drop, other, visited = new Set()){
+  console.log("recurse", drop, other);
+  if(visited.has(other)) { return }
+
+  visited.add(other);
+  if(other.contains(drop)){
+    console.log("found", drop, other);
+    for(let child of other.children){
+      recurse(drop, child, visited);
+    }
+    if(!drop.parent){
+      drop.parent = other;
+      drop.dispersion_factor = DISPERSION_RATIO * drop.parent.dispersion_factor;
+      other.children.push(drop);
+    }
+  }
+
+  return visited;
+}
+
+function marble(drop){
   for(let other of drops){
     other.marble(drop.position, drop.radius);
   }
-  drops.push(drop);
-  current_colour++; 
-  current_colour = current_colour % palette.length;
 }
 
 function keyPressed() {
