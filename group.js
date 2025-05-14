@@ -1,7 +1,8 @@
 const RES = 200;
 const SPACING_FACTOR = 1.25;
-const MAX_AGE = 100;  
+const MAX_AGE = 70;  
 const DISPERSION_RATIO = 0.5;
+const GROUP_INITIAL_SEPARATION_FACTOR = 0.95
 class Group {
   constructor(x, y, radius, idx) {
     this.x = x;
@@ -52,21 +53,6 @@ class Group {
     return res;
   }
 
-  constrain(){
-    let prev = this.agents[this.agents.length - 1].position;
-  
-    for(let i = 0; i < this.agents.length; i++){
-      let agent = this.agents[i];
-      let v = agent.position;
-      let spring = this.springs[i];
-
-      if(v.dist(prev) > spring.length*3){
-        spring.update();
-      }
-      prev = v;
-    }
-  }
-
   disperse(agent){
     if(this.age > 100) { return; }
     
@@ -89,48 +75,12 @@ class Group {
     let v = p5.Vector.sub(agent.position, this.position).normalize();  
     let sf = map(this.age, 0, MAX_AGE, this.dispersion_factor, 0);
     v.mult(sf);
-    agent.addForce(v);
+    agent.addForce(v, MAX_FORCE*2);
   }
 
-  contraction(){
-    let should_contract = false;
-    for(let other of drops){
-      if(other === this) { continue; }
-
-      for(let child of this.children){
-        if(other === child) { continue; }
-      }
-      
-      for(let agent of this.agents){
-        for(let other_agent of other.agents){
-          let dist = agent.position.dist(other_agent.position);
-          if(dist < 2){
-            should_contract = true;
-            break;
-          }
-        }
-
-        if(should_contract) break;
-      }
-    }
-
-    if(should_contract){
-      for(let agent of this.agents){
-        this.contract(agent);
-      }
-    }
-  }
-
-  contract(agent){
-    let v = p5.Vector.sub(agent.position, this.position).normalize();  
-    v.mult(-1);
-    agent.addForce(v);
-  }
 
   update(){
     this.intersecting();
-    // this.constrain();
-    this.contraction();
 
     for(let spring of this.springs){
       spring.update();
@@ -186,15 +136,8 @@ class Group {
     if(drop === this) return false;
 
     let count = this.number_of_agents_in(drop);
-    let it_works = (count == this.agents.length);
+    return count == this.agents.length;
 
-    if(it_works){
-      console.log(drop.idx, "contains", this.idx);
-      return true;
-    } else {
-      console.log(drop.idx, "does not contain", this.idx);
-      return false;
-    }
 
   }
 

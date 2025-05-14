@@ -1,9 +1,7 @@
-const AGENT_RADIUS = 2;
-const desiredSeparation = 10;
+const AGENT_RADIUS = 1;
 const AGENT_SPACING = 4;
-const MAX_SPEED = 1;
+const MAX_SPEED = 10;
 const MAX_FORCE = 0.1;
-const SEPARATION = 1.5
 const EDGES = 0.025
 class Agent {
   constructor(position, velocity, group) {
@@ -74,8 +72,8 @@ class Agent {
     return count;
   }
 
-  addForce(force) {
-    force.limit(MAX_FORCE);
+  addForce(force, limit = MAX_FORCE) {
+    force.limit(limit);
     this.velocity.add(force);
     this.velocity.limit(MAX_SPEED);
   }

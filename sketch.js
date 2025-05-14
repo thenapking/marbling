@@ -28,6 +28,8 @@ let debug = false;
 let drops = [];
 let t =0 ;
 let paused  = false;
+let marbling = false;
+let updating = true; 
 
 let current_colour = 2;
 let current_size = 50;
@@ -43,20 +45,22 @@ function setup() {
   pixelDensity(1);
 
   p5grain.setup();
+  line_of_drops(W/4, 6);
+  line_of_drops(W/2, 6);
+  line_of_drops(3*W/4, 6);
 }
 
 function draw() {
   background(bg);
-
-  
 
   update_groups();
 
   push();
     translate(BW, BW);
     draw_drops();
-    draw_borders();
   pop();
+
+  draw_borders();
   
   granulateSimple(granularity)
 
@@ -67,14 +71,26 @@ function draw() {
   }
 }
 
-
 function draw_borders(){
+  push();
+  fill(palette[0]);
+  noStroke();
+  rect(0, 0, BW, H+2*BW);
+  rect(W + BW, 0, BW, H+2*BW);
+  rect(BW, 0, W, BW);
+  rect(BW, H + BW, W, BW);
+
+  draw_border_box();
+  pop();
+}
+
+function draw_border_box(){
+  translate(BW, BW);
   noFill();
   strokeWeight(2);
   stroke(palette[1]);
   rect(0, 0, W, H);
 }
-
 
 function draw_drops(){
   for(let drop of drops){
@@ -83,9 +99,22 @@ function draw_drops(){
 }
 
 function update_groups(){
+  if(!updating) { return }
   for(let drop of drops){
     drop.update();
     
+  }
+}
+
+function line_of_drops(x0, n = 6){
+  let r = 50
+  let start = createVector(x0, r*2);
+  let end = createVector(x0, H + r/2);
+  let delta = p5.Vector.sub(end, start).div(n);
+  for(let i = 0; i < n; i++){
+    let x = start.x + delta.x * i;
+    let y = start.y + delta.y * i;
+    add_drop(x, y, r);
   }
 }
 
@@ -149,8 +178,11 @@ function recurse(drop, other, visited = new Set()){
 }
 
 function marble(drop){
+  let sf = 1
+  if(!marbling) { sf = 0.5 }
+  
   for(let other of drops){
-    other.marble(drop.position, drop.radius*1.2);
+    other.marble(drop.position, drop.radius*GROUP_INITIAL_SEPARATION_FACTOR*sf);
   }
 }
 
@@ -162,6 +194,7 @@ function keyPressed() {
   if(key === 'c') {
     current_colour++;
     current_colour = current_colour % palette.length;
+    console.log("current_colour", palette[current_colour]);
   }
 
   if(key === ' ') {
@@ -173,5 +206,15 @@ function keyPressed() {
 
   if(key === 'd'){
     debug = !debug;
+  }
+
+  if(key === 'm'){
+    marbling = !marbling;
+    console.log("marbling", marbling);
+  }
+
+  if(key === 'u'){
+    updating = !updating;
+    console.log("updating", updating);
   }
 }
