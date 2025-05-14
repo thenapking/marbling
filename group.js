@@ -1,105 +1,68 @@
 const RES = 200;
+const SPACING_FACTOR = 1.25;
 class Group {
-  constructor(x, y, r, idx) {
+  constructor(x, y, radius, idx) {
     this.x = x;
     this.y = y;
-    this.r = r;
+    this.radius = radius;
 
     this.position = createVector(x, y); 
-    this.average_position = createVector(x, y);
-    this.average_velocity = 1;
     this.idx = idx;
 
     this.agents = [];
-    this.initialize(r);
+    this.initialize(radius);
 
   }
 
-  initialize(r) {
-    for (let i = 0; i < RES; i++) {
-      let angle = map(i, 0, RES, 0, TWO_PI);
+  initialize(radius) {
+    let resolution = this.calculate_resolution();
+    for (let i = 0; i < resolution; i++) {
+      let angle = map(i, 0, resolution, 0, TWO_PI);
       let p = createVector(cos(angle), sin(angle));
-      p.mult(r).add(this.position);
+      p.mult(radius).add(this.position);
       let v = createVector(cos(angle), sin(angle))
-      v.mult(2)
+      v.mult(0.5)
       let agent = new Agent(p, v, this);
       this.agents[i] = agent;
     }
   }
 
-
-  marble(position, r) {  
-    for(let agent of this.agents){
-      let p = agent.position.copy();
-      p.sub(position);
-      let m = p.mag();
-      let root = sqrt(1 + (r * r) / (m * m));
-      p.mult(root);
-      p.add(position);
-      agent.position.set(p);
-    }   
+  calculate_resolution(){
+    let r = this.radius;
+    let res = Math.floor(TWO_PI * r / (AGENT_RADIUS*2*SPACING_FACTOR));
     
+    return res;
   }
 
-
-
-  edges(){
-    let left = false;
-
-    for(let agent of this.agents){
-      if(agent.position.x < 30 && agent.position.x > 10){
-        left = true;
-        break;
-      }
-    }
-    if(left){
-      for(let agent of this.agents){
-        agent.soft_edges(createVector(0, this.average_position.y), 5);
-      }
-    }
-  }
 
   update(){
-    let avg_dist = 0;
-    let avg_pos = createVector(0, 0);
-    let avg_vel = 0
-    let dispersion_velocity = createVector(0, 0);
     for(let agent of this.agents){
-      
-      dispersion_velocity.add(agent.update());
-      avg_vel += agent.velocity.mag();
-      avg_pos.add(agent.position);
-      avg_dist += p5.Vector.dist(this.average_position, agent.position);
+      agent.update()
     }
-
-
-    this.average_position = avg_pos.div(this.agents.length);
-    this.average_velocity = avg_vel / this.agents.length;
-
-    let new_r = avg_dist / this.agents.length;
-    
-    this.r = new_r;
-
-    return dispersion_velocity;
-    
   }
 
   draw() {
-    fill(palette[this.idx]);
-    noStroke();
-
-    beginShape();
-    for(let agent of this.agents){
-      let v = agent.position;
-      vertex(v.x, v.y);
-    }
-    endShape(CLOSE);
-
     if(debug){
       noFill();
       strokeWeight(2);
-      stroke(255,0,0);
-      circle(this.average_position.x, this.average_position.y, this.r*2);
+    } else {
+      fill(palette[this.idx]);
+      noStroke();
+    }
+
+    // beginShape();
+    //   for(let agent of this.agents){
+    //     let v = agent.position;
+    //     vertex(v.x, v.y);
+    //   }
+    // endShape(CLOSE);
+
+    if(debug){
+      fill(palette[this.idx]);
+      for(let agent of this.agents){
+        let v = agent.position;
+        circle(v.x, v.y, agent.radius * 2);
+      }
     }
   }
 }

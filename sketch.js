@@ -23,20 +23,15 @@ let palette_name = "marble";
 let palette = palettes[palette_name];
 let bg = palette[0];
 
-let debug = false;
+let debug = true;
 
 let drops = [];
 let t =0 ;
 let paused  = false;
-let max_t = 500
-let spoke_time = 20;
 
 let current_colour = 1;
-let DROP_INTERVAL = 40;
 
 let granularity = 5;
-let MAX_DROPS = 12;
-let NDROPS = 0;
 
 
 let next_postions = [];
@@ -86,37 +81,19 @@ function draw_drops(){
   }
 }
 
-// TODO implement toroidal edges
-// Try small tines which would make star/splats/spokes
-// Try shading
-
 function update_groups(){
   for(let drop of drops){
-    
     drop.update();
-
-    
   }
 }
 
 
 
-function check_intersection(position, radius = BASE_SIZE){
-  let overlaps = false;
-  for(let other of positions){
-    if (position.dist(other) < radius){
-      overlaps = true;
-      break
-    }
-  }
-  return overlaps;
-}
 
 function mousePressed(){
   let x = mouseX - BW;
   let y = mouseY - BW;
   let r = 50;
-
 
   add_drop(x, y, r);
 
@@ -126,9 +103,9 @@ function add_drop(x, y, r){
   if(x < r || x > W - r || y < r || y > H - r){ return }
   if(!r) { return}
   let drop = new Group(x, y, r, current_colour);
-  for(let other of drops){
-    other.marble(drop.position, drop.r);
-  }
+  // for(let other of drops){
+  //   other.marble(drop.position, drop.r);
+  // }
   drops.push(drop);
 }
 
