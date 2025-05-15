@@ -38,6 +38,22 @@ class Agent {
       this.velocity.y *= -EDGES;
       this.addForce(createVector(0, -1));
     }
+
+    if(this.position.x - this.radius < GROUP_SEPARATION){
+      this.group.dispersion_factor = 0
+    }
+
+    if(this.position.x + this.radius > W - GROUP_SEPARATION){
+      this.group.dispersion_factor = 0
+    }
+
+    if(this.position.y - this.radius < GROUP_SEPARATION){
+      this.group.dispersion_factor = 0
+    }
+
+    if(this.position.y + this.radius > H - GROUP_SEPARATION){
+      this.group.dispersion_factor = 0
+    }
   }
 
   checkCollision() {
@@ -68,6 +84,10 @@ class Agent {
           other.addForce(correction.copy().div(other.mass));
           count++;
         }
+
+        if(d < minDist + GROUP_SEPARATION){
+          this.group.dispersion_factor = 0
+        }
       }
     }
     return count;
@@ -82,7 +102,7 @@ class Agent {
 
   update(){
     this.checkCollision();
-    this.checkEdges();
+    // this.checkEdges();
     // this.addForce(this.acceleration);
     // if(!this.separating){
     //   this.velocity.mult(0.5);

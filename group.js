@@ -2,7 +2,9 @@ const RES = 200;
 const SPACING_FACTOR = 1.25;
 const MAX_AGE = 100;  
 const DISPERSION_RATIO = 0.5;
-GROUP_INITIAL_SEPARATION_FACTOR = 2
+const GROUP_INITIAL_SEPARATION_FACTOR = 4
+const GROUP_SEPARATION = 8 // when any agent is within this distance, the group stops dispersing
+
 class Group {
   constructor(x, y, radius, idx) {
     this.x = x;
@@ -21,7 +23,7 @@ class Group {
     this.inside = false;
     this.parent = null;
     this.children = [];
-    this.dispersion_factor = 1;
+    this.dispersion_factor = 0.5;
 
   }
 
@@ -111,6 +113,7 @@ class Group {
     }
     
     let new_position = createVector(0,0)
+    let new_radius = 0;
     for(let agent of this.agents){
       this.disperse(agent);
       agent.update()
@@ -118,8 +121,18 @@ class Group {
       new_position.add(agent.position);
     }
 
+  
+
+
+
     this.position = new_position.copy().div(this.agents.length);
     this.central_agent.position = this.position;
+
+    for(let agent of this.agents){
+      new_radius += p5.Vector.dist(agent.position, this.position);
+    }
+    new_radius = new_radius / this.agents.length;
+    this.radius = new_radius;
     this.age++;
   }
 
