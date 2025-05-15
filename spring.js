@@ -1,11 +1,11 @@
 // Simple spring between two particles
 class Spring {
-  constructor(A, B, length, stiffness) {
+  constructor(A, B, length, stiffness, damping) {
     this.A = A;
     this.B = B;
     this.length = length;
     this.stiffness  = stiffness;
-    this.damping    = 0.4;
+    this.damping    = damping
   }
 
   update() {

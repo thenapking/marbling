@@ -1,8 +1,9 @@
 const RES = 200;
 const SPACING_FACTOR = 1.25;
-const MAX_AGE = 70;  
+const MAX_AGE = 150;  
 const DISPERSION_RATIO = 0.5;
 const GROUP_INITIAL_SEPARATION_FACTOR = 0.95
+const NUMBER_OF_SPRINGS = 2 // setting this to 4 can cause crinkly edges
 class Group {
   constructor(x, y, radius, idx) {
     this.x = x;
@@ -14,6 +15,7 @@ class Group {
 
     this.agents = [];
     this.springs = [];
+    this.central_agent = null; // not added to agents
     this.initialize(radius);
     this.age = 0;
     this.inside = false;
@@ -24,6 +26,8 @@ class Group {
   }
 
   initialize(radius) {
+    this.central_agent = new Agent(this.position, createVector(0, 0), this);
+
     let resolution = this.calculate_resolution();
 
     for (let i = 0; i < resolution; i++) {
@@ -36,14 +40,23 @@ class Group {
       this.agents.push(agent);
     }
 
-    for (let stride = 1; stride <= 4; stride++) {
+    for (let stride = 1; stride <= NUMBER_OF_SPRINGS; stride++) {
       for (let i = 0; i < this.agents.length; i++) {
         const a = this.agents[i];
         const b = this.agents[(i + stride) % this.agents.length];
         const length = dist(a.position.x, a.position.y, b.position.x, b.position.y);
-        this.springs.push(new Spring(a, b, length, 0.05));
+        this.springs.push(new Spring(a, b, length, 0.05, 0.4));
       }
-    }    
+    } 
+    
+    console.log(this.position)
+    for(let i = 0; i < this.agents.length; i++){
+
+      const a = this.agents[i];
+      const b = this.central_agent;
+      const length = dist(a.position.x, a.position.y, b.position.x, b.position.y);
+      this.springs.push(new Spring(a, b, length, 100, 0));
+    }
   }
 
   calculate_resolution(){
@@ -96,6 +109,7 @@ class Group {
     }
 
     this.position = new_position.copy().div(this.agents.length);
+    this.central_agent.position = this.position.copy();
     this.age++;
   }
 

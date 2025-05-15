@@ -47,7 +47,7 @@ class Agent {
         if (this === other) continue;
 
         const d = this.position.dist(other.position);
-        const minDist = AGENT_RADIUS + 2
+        const minDist = AGENT_RADIUS // + AGENT_SPACING
 
         if (d <= minDist) {
           // Resolve overlap

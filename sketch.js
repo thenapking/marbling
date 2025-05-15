@@ -23,12 +23,14 @@ let palette_name = "marble";
 let palette = palettes[palette_name];
 let bg = palette[0];
 
-let debug = false;
 
 let drops = [];
 let t =0 ;
+
+let debug = true;
+
 let paused  = false;
-let marbling = false;
+let marbling = true;
 let updating = true; 
 
 let current_colour = 2;
