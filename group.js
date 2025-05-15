@@ -2,6 +2,7 @@ const RES = 200;
 const SPACING_FACTOR = 1.25;
 const MAX_AGE = 100;  
 const DISPERSION_RATIO = 0.5;
+GROUP_INITIAL_SEPARATION_FACTOR = 2
 class Group {
   constructor(x, y, radius, idx) {
     this.x = x;
@@ -13,6 +14,8 @@ class Group {
 
     this.agents = [];
     this.springs = [];
+    this.radial_springs = [];
+    this.central_agent = null;
     this.initialize(radius);
     this.age = 0;
     this.inside = false;
@@ -23,6 +26,7 @@ class Group {
   }
 
   initialize(radius) {
+    this.central_agent = new Agent(this.position, createVector(0, 0), this);
     let resolution = this.calculate_resolution();
 
     for (let i = 0; i < resolution; i++) {
@@ -35,14 +39,21 @@ class Group {
       this.agents.push(agent);
     }
 
-    for (let stride = 1; stride <= 3; stride++) {
+    for (let stride = 1; stride <= 2; stride++) {
       for (let i = 0; i < this.agents.length; i++) {
         const a = this.agents[i];
         const b = this.agents[(i + stride) % this.agents.length];
         const length = dist(a.position.x, a.position.y, b.position.x, b.position.y);
-        this.springs.push(new Spring(a, b, length, 0.05));
+        this.springs.push(new Spring(a, b, length, 0.4));
       }
-    }    
+    }   
+    
+    for(let i = 0; i < this.agents.length; i++){
+      let a = this.agents[i];
+      let b = this.central_agent;
+      let length = dist(a.position.x, a.position.y, b.position.x, b.position.y);
+      this.radial_springs.push(new Spring(a, b, length, 0.02));
+    }
   }
 
   calculate_resolution(){
@@ -94,6 +105,10 @@ class Group {
   update(){
     this.intersecting();
     this.constrain();
+
+    for(let spring of this.radial_springs){
+      spring.update();
+    }
     
     let new_position = createVector(0,0)
     for(let agent of this.agents){
@@ -104,6 +119,7 @@ class Group {
     }
 
     this.position = new_position.copy().div(this.agents.length);
+    this.central_agent.position = this.position;
     this.age++;
   }
 
@@ -202,6 +218,10 @@ class Group {
       noFill();
       strokeWeight(1);
       for(let spring of this.springs){
+        spring.draw();
+      }
+
+      for(let spring of this.radial_springs){
         spring.draw();
       }
     }
