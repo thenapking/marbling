@@ -1,5 +1,5 @@
 const AGENT_RADIUS = 1;
-const desiredSeparation = 10;
+const desiredSeparation = 10/u;
 const MAX_SPEED = 1;
 const MAX_FORCE = 0.1;
 const SEPARATION = 1.5
@@ -15,6 +15,7 @@ class Agent {
     this.mass         = 1.25;
     this.radius       = AGENT_RADIUS;
     this.separating    = false;
+    this.active = true;
   }
 
   checkEdges() {
@@ -101,6 +102,7 @@ class Agent {
 
 
   update(){
+    if(!this.active) return;
     this.checkCollision();
     // this.checkEdges();
     // this.addForce(this.acceleration);
@@ -109,33 +111,14 @@ class Agent {
     // }
     this.position.add(this.velocity);
     this.velocity.mult(0.1);
-
+    if(this.velocity.mag() < 0.01) {
+      this.active = false;
+    }
    
   }
 
 
-  // update(){
-  //   let separation = this.separation(this).mult(SEPARATION); 
-
-  //   this.acceleration.add(separation);
-  //   this.acceleration.limit(MAX_FORCE);
-  //   this.velocity.add(this.acceleration);
-  //   this.velocity.limit(this.maxSpeed);
-  //   this.position.add(this.velocity);
-  //   this.position.add(this.dispersion_velocity);
-
-  //   this.acceleration.mult(0);
-  //   this.velocity.mult(0);
-
-  // this.position.x = (this.position.x + width) % width;
-  // this.position.y = (this.position.y + height) % height;
-
-  //   this.dispersion_velocity.mult(0.95)
-
-  //   if(this.dispersion_velocity.mag() < 0.1){
-  //     this.dispersion_velocity = createVector(0,0);
-  //   }
-  // }
+  
 
   draw(){
     circle(this.position.x, this.position.y, this.radius * 2);

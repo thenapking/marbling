@@ -1,9 +1,8 @@
-const RES = 200;
-const SPACING_FACTOR = 1.25;
+const SPACING_FACTOR = 1.25; // WAS 1.25
 const MAX_AGE = 100;  
 const DISPERSION_RATIO = 0.5;
-const GROUP_INITIAL_SEPARATION_FACTOR = 4
-const GROUP_SEPARATION = 8 // when any agent is within this distance, the group stops dispersing
+const GROUP_INITIAL_SEPARATION_FACTOR = 4/u
+const GROUP_SEPARATION = 8/u // when any agent is within this distance, the group stops dispersing
 
 class Group {
   constructor(x, y, radius, idx) {
@@ -24,7 +23,7 @@ class Group {
     this.parent = null;
     this.children = [];
     this.dispersion_factor = 0.5;
-
+    this.active = true;
   }
 
   initialize(radius) {
@@ -59,9 +58,10 @@ class Group {
   }
 
   calculate_resolution(){
-    let r = this.radius;
+    let r = Math.round(this.radius);
     let res = Math.floor(TWO_PI * r / (AGENT_RADIUS*2*SPACING_FACTOR));
-    
+    if(res % 2 !== 0) { res -= 1 }
+    if(res % 4 !== 0) { res -= 2 } 
     return res;
   }
 
@@ -105,6 +105,7 @@ class Group {
   }
 
   update(){
+    // if(!this.active) { return; }
     this.intersecting();
     this.constrain();
 
@@ -114,16 +115,16 @@ class Group {
     
     let new_position = createVector(0,0)
     let new_radius = 0;
+    let active = 0;
     for(let agent of this.agents){
       this.disperse(agent);
       agent.update()
       agent.separating = false;
       new_position.add(agent.position);
+      if(agent.active) {
+        active++;
+      }
     }
-
-  
-
-
 
     this.position = new_position.copy().div(this.agents.length);
     this.central_agent.position = this.position;
@@ -134,6 +135,9 @@ class Group {
     new_radius = new_radius / this.agents.length;
     this.radius = new_radius;
     this.age++;
+    if(active === 0 || this.age > MAX_AGE){
+      this.active = false;
+    }
   }
 
   marble(position, r) {  
@@ -169,26 +173,6 @@ class Group {
     return false;
   }
 
-  // FIX THE NAMING AND LOGIC
-  wrong_logic(drop){
-    if(drop === this) return false;
-
-    let count = this.number_of_agents_in(drop);
-    let it_works = (count == this.agents.length);
-
-    if(it_works){
-      console.log(drop.idx, "contains", this.idx);
-      return true;
-    } else {
-      console.log(drop.idx, "does not contain", this.idx);
-      return false;
-    }
-
-  }
-
-  contains(drop){
-    return drop.wrong_logic(this);
-  }
 
   number_of_agents_in(drop){
     if(drop === this) return 0;
@@ -204,14 +188,17 @@ class Group {
     return count;
   }
 
-  draw() {
+  draw(){
     if(debug){
-      noFill();
-      strokeWeight(2);
+      this.draw_debug();
     } else {
-      fill(palette[this.idx]);
-      noStroke();
+      this.draw_filled();
     }
+  }
+
+  draw_spokes(modulo = 1){
+    strokeWeight(2);
+    noFill();
 
     beginShape();
       for(let agent of this.agents){
@@ -220,23 +207,46 @@ class Group {
       }
     endShape(CLOSE);
 
-    if(debug){
-      fill(palette[this.idx]);
-      for(let agent of this.agents){
-        agent.draw();
-      }
-
-      circle(this.position.x, this.position.y, 5);
-
-      noFill();
-      strokeWeight(1);
-      for(let spring of this.springs){
-        spring.draw();
-      }
-
-      for(let spring of this.radial_springs){
-        spring.draw();
-      }
+    for(let i = 0; i < this.radial_springs.length; i++){
+      if(modulo > 1 && i % modulo !== 0) continue; // Skip if modulo condition is not met
+      let spring = this.radial_springs[i];
+      spring.draw();
     }
+  }
+
+  draw_debug(){
+    noFill();
+    strokeWeight(2);
+
+    fill(palette[this.idx]);
+    for(let agent of this.agents){
+      agent.draw();
+    }
+
+    circle(this.position.x, this.position.y, 5);
+
+    noFill();
+    strokeWeight(1);
+    for(let spring of this.springs){
+      spring.draw();
+    }
+
+    for(let spring of this.radial_springs){
+      spring.draw();
+    }
+  }
+
+  draw_filled() {
+    fill(palette[this.idx]);
+    noStroke();
+    
+    beginShape();
+      for(let agent of agents){
+        let v = agent.position;
+        vertex(v.x, v.y);
+      }
+    endShape(CLOSE);
+
+    
   }
 }
